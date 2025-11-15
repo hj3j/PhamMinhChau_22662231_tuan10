@@ -1,6 +1,14 @@
+import { initDB } from "@/db/db";
 import { Text, View } from "react-native";
 
 export default function Index() {
+
+  try {
+     initDB()
+  } catch (error) {
+    
+  }
+ 
   return (
     <View
       style={{
