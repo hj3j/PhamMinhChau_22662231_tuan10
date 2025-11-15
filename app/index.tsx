@@ -1,10 +1,10 @@
-import { StyleSheet, Text, View, FlatList, Pressable } from "react-native";
+import { StyleSheet, Text, View, FlatList, Pressable, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Item, { Movie } from '@/component/Movie'; // Đổi import thành Movie
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 // Đổi import sang hàm lấy phim mới
-import { getAllMoviesDB, initDB, toggleWatchedDB } from "@/db/db"; 
+import { deleteMovieDB, getAllMoviesDB, initDB, toggleWatchedDB } from "@/db/db"; 
 import { MaterialIcons } from '@expo/vector-icons';
 
 
@@ -60,6 +60,34 @@ export default function MovieListScreen() { // Đổi tên component cho đúng 
         }
     }
 
+    // --- HÀM MỚI: XÓA PHIM VÀ XÁC NHẬN ---
+    const handleDelete = (id: number) => {
+        Alert.alert(
+            "Xác nhận xóa phim", 
+            "Bạn có chắc chắn muốn xóa bộ phim này khỏi danh sách?",
+            [
+                {
+                    text: "Hủy",
+                    style: "cancel"
+                },
+                {
+                    text: "Xóa",
+                    onPress: async () => {
+                        try {
+                            await deleteMovieDB(id);
+                            console.log(`Movie ID ${id} deleted.`);
+                            // Cập nhật UI
+                            await loadMovies(); 
+                        } catch (error) {
+                            Alert.alert("Lỗi", "Không thể xóa phim.");
+                            console.error("Lỗi xóa DB:", error);
+                        }
+                    },
+                    style: "destructive"
+                }
+            ]
+        );
+    }
 
     
     return (
@@ -83,14 +111,26 @@ export default function MovieListScreen() { // Đổi tên component cho đúng 
                 ListEmptyComponent={!isLoading ? renderEmpty : null}
                 renderItem={({item})=>{
                     return(
-                        <Pressable 
-                            // thao tác toggle watch 0-1
-                            onPress={() => handleToggleWatched(item)}
-                            // chức năng sửa khi chạm LÂU:
-                            onLongPress={()=>router.navigate({pathname:"/update", params: {item: JSON.stringify(item)}})}
-                        >
-                            <Item item={item} />
-                        </Pressable>
+                        <View style={styles.listItemWrapper}>
+                            <Pressable 
+                                // Nhấn ngắn để toggle watched
+                                onPress={() => handleToggleWatched(item)}
+                                // Nhấn giữ để SỬA THÔNG TIN
+                                onLongPress={()=>router.navigate({pathname:"/update", params: {item: JSON.stringify(item)}})}
+                                style={styles.itemContent}
+                            >
+                                <Item item={item} />
+                            </Pressable>
+                            
+                            {/* NÚT XÓA */}
+                            <Pressable 
+                                onPress={() => handleDelete(item.id)}
+                                style={styles.deleteButton}
+                            >
+                                <MaterialIcons name="delete-forever" size={24} color="white" />
+                            </Pressable>
+                        </View>
+                        
                     );
                 }}
             />
@@ -142,5 +182,21 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#999',
         marginTop: 5,
+    },
+    listItemWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+        borderRadius: 8,
+    },
+    itemContent: {
+        flex: 1, // Chiếm phần lớn diện tích
+    },
+    deleteButton: {
+        backgroundColor: '#d9534f', // Màu đỏ
+        padding: 10,
+        borderRadius: 8,
+        justifyContent: 'center',
+        marginLeft: 4,
     }
 });

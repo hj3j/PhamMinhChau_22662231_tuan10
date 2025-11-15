@@ -143,3 +143,13 @@ export const updateMovieDB = async (
         id
     ]);
 };
+
+// --- HÀM MỚI: DELETE PHIM ---
+export const deleteMovieDB = async (id: number) => {
+    const sql = `
+        DELETE FROM movies
+        WHERE id = ?
+    `;
+    
+    await db.runAsync(sql, [id]);
+};
