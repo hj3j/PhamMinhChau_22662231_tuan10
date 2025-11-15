@@ -1,15 +1,7 @@
+import { Movie } from "@/component/Movie";
 import * as SQLite from "expo-sqlite" 
 
 const db = SQLite.openDatabaseSync("watchlist.db")
-
-
-// Định nghĩa một interface/type đơn giản cho Movie để tiện cho hàm seed
-interface Movie {
-    title: string;
-    year: number;
-    watched: number; // 0 hoặc 1
-    rating: number | null; // Có thể null
-}
 
 /**
  * Hàm khởi tạo bảng MOVIES nếu chưa tồn tại
@@ -42,29 +34,32 @@ export const initDB = async () => {
  */
 const seedSampleMovies = async () => {
     try {
-        // Kiểm tra số lượng bản ghi hiện có trong bảng movies
+        // Kiểm tra số lượng bản ghi hiện có...
         const result = await db.getFirstSync<{ count: number }>("SELECT COUNT(id) as count FROM movies");
 
         if (result && result.count === 0) {
             
-            const sampleMovies: Movie[] = [
-                { title: "Inception", year: 2010, watched: 0, rating: null },
-                { title: "Interstellar", year: 2014, watched: 1, rating: 5 },
-                { title: "Dune", year: 2021, watched: 0, rating: null },
+            // SỬA LỖI: Thêm created_at (kiểu number) vào dữ liệu mẫu
+            // Dữ liệu mẫu (không cần id, DB sẽ tự tạo)
+            const sampleMovies = [
+                { title: "Inception", year: 2010, watched: 0, rating: null, created_at: Date.now() },
+                { title: "Interstellar", year: 2014, watched: 1, rating: 5, created_at: Date.now() + 1000 },
+                { title: "Dune", year: 2021, watched: 0, rating: null, created_at: Date.now() + 2000 },
             ];
 
             const insertStatement = db.prepareSync(
+                // Cấu trúc INSERT đã đúng
                 "INSERT INTO movies (title, year, watched, rating, created_at) VALUES (?, ?, ?, ?, ?)"
             );
 
             for (const movie of sampleMovies) {
-                const createdAt = Date.now(); // Sử dụng timestamp làm created_at
+                // created_at đã được thêm vào đối tượng movie
                 insertStatement.executeSync(
                     movie.title, 
                     movie.year, 
                     movie.watched, 
                     movie.rating, 
-                    createdAt
+                    movie.created_at // Dùng giá trị đã nhất quán
                 );
             }
             insertStatement.finalizeSync();
@@ -77,3 +72,10 @@ const seedSampleMovies = async () => {
         console.log("Lỗi khi seed dữ liệu: " + error);
     }
 };
+
+// Hàm lấy tất cả phim
+export const getAllMoviesDB = async () => {
+    return await db.getAllAsync<Movie>(
+        "SELECT * FROM movies" 
+    );
+}
