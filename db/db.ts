@@ -106,3 +106,18 @@ export const insertMovieDB = async (
         created_at
     ]);
 };
+
+// --- HÀM MỚI: TOGGLE WATCHED STATE ---
+export const toggleWatchedDB = async (id: number, currentWatched: number) => {
+    // Tính toán trạng thái mới: 0 -> 1, hoặc 1 -> 0
+    const newWatched = currentWatched === 0 ? 1 : 0;
+    
+    await db.runAsync(
+        `
+        UPDATE movies
+        SET watched = ?
+        WHERE id = ?
+        `, 
+        [newWatched, id]
+    );
+};

@@ -1,15 +1,14 @@
 import { StyleSheet, Text, View } from "react-native";
 
-// Đổi tên và cấu trúc Type
+// Định nghĩa lại type Movie (đảm bảo id có)
 export type Movie = {
-    id: number;
+    id: number; 
     title: string;
     year: number;
     watched: number; // 0 hoặc 1
-    rating: number | null; // 1-5
-    created_at: number; // Sửa tên thành created_at cho nhất quán
+    rating: number | null;
+    created_at: number;
 }
-
 
 type Props = {
     item: Movie
@@ -20,14 +19,18 @@ export default function Item({item} : Props){
     const ratingText = item.rating ? `⭐️ ${item.rating}/5` : 'Chưa đánh giá';
     const watchedText = item.watched === 1 ? '✅ Đã xem' : '🕒 Cần xem';
     
+    // TẠO STYLE ĐỘNG: Nếu đã xem, thêm gạch ngang và làm mờ
+    const isWatched = item.watched === 1;
+
     return(
-        <View style={styles.itemContainer}>
+        <View style={[styles.itemContainer, isWatched && styles.watchedContainer]}>
             <View style={styles.infoCol}>
-                <Text style={styles.title}>{item.title}</Text>
+                {/* ÁP DỤNG STYLE GẠCH NGANG CHO TITLE */}
+                <Text style={[styles.title, isWatched && styles.strikethrough]}>{item.title}</Text>
                 <Text style={styles.year}>Năm: {item.year}</Text>
             </View>
             <View style={styles.statusCol}>
-                <Text style={item.watched === 1 ? styles.watched : styles.toWatch}>{watchedText}</Text>
+                <Text style={isWatched ? styles.watched : styles.toWatch}>{watchedText}</Text>
                 <Text style={styles.rating}>{ratingText}</Text>
             </View>
         </View>
@@ -46,6 +49,11 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         borderRadius: 8,
     },
+    // STYLE MỚI: Làm mờ nền khi đã xem
+    watchedContainer: {
+        backgroundColor: '#e0f7fa', // Nền màu xanh nhạt
+        opacity: 0.8,
+    },
     infoCol: {
         flex: 2,
     },
@@ -57,6 +65,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
+    },
+    // STYLE MỚI: Gạch ngang chữ
+    strikethrough: {
+        textDecorationLine: 'line-through',
+        color: '#888',
     },
     year: {
         fontSize: 14,

@@ -4,7 +4,7 @@ import Item, { Movie } from '@/component/Movie'; // Đổi import thành Movie
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 // Đổi import sang hàm lấy phim mới
-import { getAllMoviesDB, initDB } from "@/db/db"; 
+import { getAllMoviesDB, initDB, toggleWatchedDB } from "@/db/db"; 
 import { MaterialIcons } from '@expo/vector-icons';
 
 
@@ -45,6 +45,21 @@ export default function MovieListScreen() { // Đổi tên component cho đúng 
         </View>
     );
 
+    // --- HÀM MỚI: TOGGLE WATCHED ---
+    const handleToggleWatched = async (movie: Movie) => {
+        try {
+            // 1. Cập nhật DB
+            await toggleWatchedDB(movie.id, movie.watched);
+            console.log(`Movie ID ${movie.id} toggled.`);
+            
+            // 2. Load lại dữ liệu để cập nhật UI
+            await loadMovies(); 
+
+        } catch (err) {
+            console.error("Lỗi khi toggle watched:", err);
+        }
+    }
+
 
     
     return (
@@ -70,7 +85,9 @@ export default function MovieListScreen() { // Đổi tên component cho đúng 
                     return(
                         <Pressable 
                             // Thao tác sửa/chi tiết khi ấn
-                            // onPress={()=>router.navigate({pathname:"/update", params: {item: JSON.stringify(item)}})}
+                            onPress={() => handleToggleWatched(item)}
+                            // Nếu muốn giữ lại chức năng sửa khi chạm LÂU:
+                            // onLongPress={()=>router.navigate({pathname:"/update", params: {item: JSON.stringify(item)}})}
                         >
                             <Item item={item} />
                         </Pressable>
