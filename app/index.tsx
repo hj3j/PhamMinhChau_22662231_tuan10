@@ -84,10 +84,10 @@ export default function MovieListScreen() { // Đổi tên component cho đúng 
                 renderItem={({item})=>{
                     return(
                         <Pressable 
-                            // Thao tác sửa/chi tiết khi ấn
+                            // thao tác toggle watch 0-1
                             onPress={() => handleToggleWatched(item)}
-                            // Nếu muốn giữ lại chức năng sửa khi chạm LÂU:
-                            // onLongPress={()=>router.navigate({pathname:"/update", params: {item: JSON.stringify(item)}})}
+                            // chức năng sửa khi chạm LÂU:
+                            onLongPress={()=>router.navigate({pathname:"/update", params: {item: JSON.stringify(item)}})}
                         >
                             <Item item={item} />
                         </Pressable>

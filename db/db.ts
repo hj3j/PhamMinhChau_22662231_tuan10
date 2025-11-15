@@ -121,3 +121,25 @@ export const toggleWatchedDB = async (id: number, currentWatched: number) => {
         [newWatched, id]
     );
 };
+
+// --- HÀM MỚI: UPDATE PHIM ---
+export const updateMovieDB = async (
+    id: number,
+    newTitle: string, 
+    newYear: number | null, 
+    newRating: number | null
+) => {
+    // Lưu ý: Watched state không thay đổi qua hàm này (có toggleWatchedDB riêng)
+    const sql = `
+        UPDATE movies
+        SET title = ?, year = ?, rating = ?
+        WHERE id = ?
+    `;
+    
+    await db.runAsync(sql, [
+        newTitle, 
+        newYear, 
+        newRating, 
+        id
+    ]);
+};
