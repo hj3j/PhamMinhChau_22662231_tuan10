@@ -1,8 +1,8 @@
-import { StyleSheet, Text, View, FlatList, Pressable, Alert } from "react-native";
+import { StyleSheet, Text, View, FlatList, Pressable, Alert, TextInput, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Item, { Movie } from '@/component/Movie'; // Đổi import thành Movie
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 // Đổi import sang hàm lấy phim mới
 import { deleteMovieDB, getAllMoviesDB, initDB, toggleWatchedDB } from "@/db/db"; 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -14,20 +14,22 @@ export default function MovieListScreen() { // Đổi tên component cho đúng 
     const [movies, setMovies] = useState<Movie[]>([]); 
     const [isLoading, setIsLoading] = useState(true);
 
-    const loadMovies = async () => {
+    // TRẠNG THÁI MỚI: Search và Filter
+    const [searchText, setSearchText] = useState('');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'watched' | 'unwatched'>('all');
+
+    // Tối ưu hóa hàm loadMovies bằng useCallback
+    const loadMovies = useCallback(async () => {
         setIsLoading(true);
-        try{
-            // TẠO BẢNG VÀ SEED TRƯỚC KHI LẤY DỮ LIỆU
-            await initDB(); 
-            const dataFromDB = await getAllMoviesDB(); // Lấy dữ liệu phim
-            setMovies(dataFromDB);
-            console.log("Lấy danh sách phim thành công. Số lượng:", dataFromDB.length);
-        }catch(err){
-            console.log("Lấy dữ liệu thất bại: " + err);
+        try {
+            const data = await getAllMoviesDB();
+            setMovies(data);
+        } catch (err) {
+            console.error("Lỗi khi tải phim:", err);
         } finally {
             setIsLoading(false);
         }
-    }
+    }, []);
     
     // Sử dụng useFocusEffect để load dữ liệu mỗi khi màn hình được focus
     useFocusEffect(
@@ -89,6 +91,29 @@ export default function MovieListScreen() { // Đổi tên component cho đúng 
         );
     }
 
+    // --- LOGIC MỚI: LỌC/TÌM KIẾM SỬ DỤNG useMemo (TỐI ƯU) ---
+    const filteredMovies = useMemo(() => {
+        let filtered = movies;
+
+        // 1. Lọc theo trạng thái Đã/Chưa xem
+        if (filterStatus === 'watched') {
+            filtered = filtered.filter(movie => movie.watched === 1);
+        } else if (filterStatus === 'unwatched') {
+            filtered = filtered.filter(movie => movie.watched === 0);
+        }
+
+        // 2. Lọc theo Title (Tìm kiếm)
+        if (searchText.trim()) {
+            const lowerCaseSearch = searchText.trim().toLowerCase();
+            filtered = filtered.filter(movie => 
+                movie.title.toLowerCase().includes(lowerCaseSearch)
+            );
+        }
+        
+        // Trả về danh sách đã được lọc
+        return filtered;
+    }, [movies, filterStatus, searchText]);
+
     
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -104,9 +129,45 @@ export default function MovieListScreen() { // Đổi tên component cho đúng 
                 </Pressable>
             </View>
 
+            {/* KHU VỰC MỚI: Search và Filter */}
+            <View style={styles.searchContainer}>
+                {/* 1. Thanh Search */}
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Tìm kiếm theo tên phim..."
+                    value={searchText}
+                    onChangeText={setSearchText}
+                />
+                
+                {/* 2. Bộ lọc Watched */}
+                <View style={styles.filterGroup}>
+                    {/* Nút All */}
+                    <TouchableOpacity
+                        style={[styles.filterButton, filterStatus === 'all' && styles.activeFilter]}
+                        onPress={() => setFilterStatus('all')}
+                    >
+                        <Text style={[styles.filterText, filterStatus === 'all' && styles.activeFilterText]}>Tất cả</Text>
+                    </TouchableOpacity>
+                    {/* Nút Đã xem */}
+                    <TouchableOpacity
+                        style={[styles.filterButton, filterStatus === 'watched' && styles.activeFilter]}
+                        onPress={() => setFilterStatus('watched')}
+                    >
+                        <Text style={[styles.filterText, filterStatus === 'watched' && styles.activeFilterText]}>Đã xem</Text>
+                    </TouchableOpacity>
+                    {/* Nút Chưa xem */}
+                    <TouchableOpacity
+                        style={[styles.filterButton, filterStatus === 'unwatched' && styles.activeFilter]}
+                        onPress={() => setFilterStatus('unwatched')}
+                    >
+                        <Text style={[styles.filterText, filterStatus === 'unwatched' && styles.activeFilterText]}>Chưa xem</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
             {/* Danh sách phim */}
             <FlatList
-                data={movies}
+                data={filteredMovies}
                 keyExtractor={(item) => item.id.toString()}
                 ListEmptyComponent={!isLoading ? renderEmpty : null}
                 renderItem={({item})=>{
@@ -198,5 +259,42 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         justifyContent: 'center',
         marginLeft: 4,
-    }
+    },
+    searchContainer: {
+        padding: 10,
+        backgroundColor: '#f8f8f8',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    searchInput: {
+        height: 40,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        borderRadius: 20,
+        paddingHorizontal: 15,
+        marginBottom: 10,
+        backgroundColor: 'white',
+    },
+    filterGroup: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+    },
+    filterButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        borderRadius: 20,
+        backgroundColor: '#e0e0e0',
+    },
+    activeFilter: {
+        backgroundColor: '#007AFF', // Màu xanh dương nổi bật
+    },
+    filterText: {
+        color: '#333',
+        fontWeight: '500',
+    },
+    activeFilterText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+
 });
