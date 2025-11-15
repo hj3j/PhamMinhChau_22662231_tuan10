@@ -79,3 +79,30 @@ export const getAllMoviesDB = async () => {
         "SELECT * FROM movies" 
     );
 }
+
+// --- HÀM MỚI: INSERT PHIM MỚI ---
+export const insertMovieDB = async (
+    title: string, 
+    year: number | null, 
+    rating: number | null
+) => {
+    // watched mặc định là 0, created_at là timestamp hiện tại (INTEGER)
+    const watched = 0;
+    const created_at = Date.now(); 
+
+    // Chuẩn bị câu lệnh SQL
+    const sql = `
+        INSERT INTO movies 
+        (title, year, watched, rating, created_at) 
+        VALUES (?, ?, ?, ?, ?)
+    `;
+    
+    // year và rating có thể là null
+    await db.runAsync(sql, [
+        title, 
+        year, 
+        watched, 
+        rating, 
+        created_at
+    ]);
+};

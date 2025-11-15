@@ -54,7 +54,7 @@ export default function MovieListScreen() { // Đổi tên component cho đúng 
             {/* Thanh chức năng (Chỉ giữ lại nút Add) */}
             <View style={styles.functionBar}>
                 <Pressable 
-                    // onPress={()=>router.navigate("/add")}
+                    onPress={()=>router.navigate("/add")}
                     style={styles.addButton}
                 >
                     <Text style={styles.buttonText}>+ Thêm Phim</Text>
